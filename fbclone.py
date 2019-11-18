@@ -85,17 +85,7 @@ def clone_collection(src, dst, dst_root):
 	for doc in doc_list:
 		print("\t\tCloning document "+doc.id)
 		doc_dict = doc.get().to_dict()
-		for key in doc_dict:
-			if isinstance(doc_dict[key], DocumentReference):
-				doc_dict[key] = dst_root.document((*doc_dict[key]._path))
-			elif isinstance(doc_dict[key], list):
-				for child_idx, value in enumerate(doc_dict[key]):
-					if isinstance(doc_dict[key][child_idx], DocumentReference):
-						doc_dict[key][child_idx] = dst_root.document((*doc_dict[key][child_idx]._path))
-			elif isinstance(doc_dict[key], dict):
-				for child_key in doc_dict[key]:
-					if isinstance(doc_dict[key][child_key], DocumentReference):
-						doc_dict[key][child_key] = dst_root.document((*doc_dict[key][child_key]._path))
+		doc_dict = check_dict(doc_dict, dst_root)
 
 		dst.document(doc.id).set(doc_dict)
 		child_cols = doc.collections()
@@ -103,6 +93,27 @@ def clone_collection(src, dst, dst_root):
 			print("\tCloning collection "+col.id)
 			clone_collection(col, dst.document(doc.id).collection(col.id), dst_root)
 
+def check_dict(doc_dict, dst_root):
+	for key in doc_dict:
+		if isinstance(doc_dict[key], DocumentReference):
+			doc_dict[key] = dst_root.document((*doc_dict[key]._path))
+		elif isinstance(doc_dict[key], list):
+			doc_dict[key] = check_list(doc_dict[key], dst_root)
+		elif isinstance(doc_dict[key], dict):
+			doc_dict[key] = check_dict(doc_dict[key], dst_root)
+
+	return doc_dict
+
+def check_list(doc_list, dst_root):
+	for idx, value in enumerate(doc_list):
+		if isinstance(value, DocumentReference):
+			doc_list[idx] = dst_root.document((*value._path))
+		elif isinstance(value, list):
+			doc_list[idx] = check_list(value, dst_root)
+		elif isinstance(value, dict):
+			doc_list[idx] = check_dict(value, dst_root)
+
+	return doc_list
 
 if __name__== "__main__":
 	main()
