@@ -87,8 +87,15 @@ def clone_collection(src, dst, dst_root):
 		doc_dict = doc.get().to_dict()
 		for key in doc_dict:
 			if isinstance(doc_dict[key], DocumentReference):
-				doc_value = doc_dict[key]
-				doc_dict[key] = dst_root.document((*doc_value._path))
+				doc_dict[key] = dst_root.document((*doc_dict[key]._path))
+			elif isinstance(doc_dict[key], list):
+				for child_idx, value in enumerate(doc_dict[key]):
+					if isinstance(doc_dict[key][child_idx], DocumentReference):
+						doc_dict[key][child_idx] = dst_root.document((*doc_dict[key][child_idx]._path))
+			elif isinstance(doc_dict[key], dict):
+				for child_key in doc_dict[key]:
+					if isinstance(doc_dict[key][child_key], DocumentReference):
+						doc_dict[key][child_key] = dst_root.document((*doc_dict[key][child_key]._path))
 
 		dst.document(doc.id).set(doc_dict)
 		child_cols = doc.collections()
